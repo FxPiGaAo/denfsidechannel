@@ -1795,9 +1795,9 @@ bool ldst_unit::memory_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_rea
    struct cache_sub_stats css;
    if(m_L1D) m_L1D->get_sub_stats(css);
    printf("core %d has %d misses.\n",m_sid,css.accesses);
-   //free(*css);
    bool L1Disunderattack = false;
-   if(L1Disunderattack == true) bypassL1D = true; 
+   if(css.accesses > 10) {L1Disunderattack = true;printf("Disable l1d in core %d\n", m_sid);}
+   //if(L1Disunderattack == true) bypassL1D = true; 
 //////////////////////////////////////////////////////////////
 
    if ( CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL) ) {
@@ -1807,7 +1807,7 @@ bool ldst_unit::memory_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_rea
        if (m_core->get_config()->gmem_skip_L1D && (CACHE_L1 != inst.cache_op))
            bypassL1D = true; 
    }
-   if( bypassL1D ) {
+   if( bypassL1D || L1Disunderattack) {
        // bypass L1 cache
        unsigned control_size = inst.is_store() ? WRITE_PACKET_SIZE : READ_PACKET_SIZE;
        unsigned size = access.get_size() + control_size;
@@ -2340,15 +2340,19 @@ void ldst_unit::cycle()
                assert( !mf->get_is_write() ); // L1 cache is write evict, allocate line on load miss only
 
                bool bypassL1D = false;
+               struct cache_sub_stats css;
+               if(m_L1D) m_L1D->get_sub_stats(css);
+               printf("lsdu::cycle(): core %d has %d misses.\n",m_sid,css.accesses);
                bool L1Disunderattack = false;
-               if(L1Disunderattack == true) bypassL1D = true; 
+               if(css.accesses > 10) {L1Disunderattack = true;printf("Disable l1d in core %d\n", m_sid);}
+               //if(L1Disunderattack == true) bypassL1D = true; 
                if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
                    bypassL1D = true; 
                } else if (mf->get_access_type() == GLOBAL_ACC_R || mf->get_access_type() == GLOBAL_ACC_W) { // global memory access 
                    if (m_core->get_config()->gmem_skip_L1D)
                        bypassL1D = true; 
                }
-               if( bypassL1D ) {
+               if( bypassL1D || L1Disunderattack ) {
                    if ( m_next_global == NULL ) {
                        mf->set_status(IN_SHADER_FETCHED,gpu_sim_cycle+gpu_tot_sim_cycle);
                        m_response_fifo.pop_front();
