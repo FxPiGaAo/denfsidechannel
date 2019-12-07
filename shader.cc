@@ -1789,8 +1789,17 @@ bool ldst_unit::memory_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_rea
    const mem_access_t &access = inst.accessq_back();
 
    bool bypassL1D = false;
-   bool L1Disunderattack = true;
+
+/////////////////////////////////////////////////////////
+
+   struct cache_sub_stats css;
+   if(m_L1D) m_L1D->get_sub_stats(css);
+   printf("core %d has %d misses.\n",m_sid,css.accesses);
+   //free(*css);
+   bool L1Disunderattack = false;
    if(L1Disunderattack == true) bypassL1D = true; 
+//////////////////////////////////////////////////////////////
+
    if ( CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL) ) {
        bypassL1D = true; 
    } else if (inst.space.is_global()) { // global memory access 
@@ -2331,7 +2340,7 @@ void ldst_unit::cycle()
                assert( !mf->get_is_write() ); // L1 cache is write evict, allocate line on load miss only
 
                bool bypassL1D = false;
-               bool L1Disunderattack = true;
+               bool L1Disunderattack = false;
                if(L1Disunderattack == true) bypassL1D = true; 
                if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
                    bypassL1D = true; 
