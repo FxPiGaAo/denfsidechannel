@@ -1788,7 +1788,9 @@ bool ldst_unit::memory_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_rea
    mem_stage_stall_type stall_cond = NO_RC_FAIL;
    const mem_access_t &access = inst.accessq_back();
 
-   bool bypassL1D = false; 
+   bool bypassL1D = false;
+   bool L1Disunderattack = true;
+   if(L1Disunderattack == true) bypassL1D = true; 
    if ( CACHE_GLOBAL == inst.cache_op || (m_L1D == NULL) ) {
        bypassL1D = true; 
    } else if (inst.space.is_global()) { // global memory access 
@@ -2328,7 +2330,9 @@ void ldst_unit::cycle()
            } else {
                assert( !mf->get_is_write() ); // L1 cache is write evict, allocate line on load miss only
 
-               bool bypassL1D = false; 
+               bool bypassL1D = false;
+               bool L1Disunderattack = true;
+               if(L1Disunderattack == true) bypassL1D = true; 
                if ( CACHE_GLOBAL == mf->get_inst().cache_op || (m_L1D == NULL) ) {
                    bypassL1D = true; 
                } else if (mf->get_access_type() == GLOBAL_ACC_R || mf->get_access_type() == GLOBAL_ACC_W) { // global memory access 
